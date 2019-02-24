@@ -1,7 +1,7 @@
 import z3
 from miasm2.core.utils                      import upck16, pck64
 from miasm2.analysis.dse                    import DSEPathConstraint as DSEPC
-from miasm2.expression.expression           import ExprInt, ExprId, ExprMem, ExprAff
+from miasm2.expression.expression           import ExprInt, ExprId, ExprMem, ExprAssign
 from miasm2.jitter.csts                     import PAGE_READ, PAGE_WRITE
 from sandbox_win64                          import Sandbox_Win64
 
@@ -81,7 +81,7 @@ def main():
     dse.restore_snapshot(snapshot, keep_known_solutions=not new_run)
     # Update the password in jitter memory
     for i, c in enumerate(current):
-      sb.jitter.eval_expr(ExprAff(ExprMem(ExprInt(0x20000018+i, 64), 8), ExprInt(int(c), 8)))
+      sb.jitter.eval_expr(ExprAssign(ExprMem(ExprInt(0x20000018+i, 64), 8), ExprInt(int(c), 8)))
     # Symbolize the next unicode char (2 bytes)
     dse.update_state({ExprMem(ExprInt(0x20000018+index, 64), 8) : dse.memory_to_expr(0x20000018+index), \
                         ExprMem(ExprInt(0x20000018+index+1, 64), 8) : dse.memory_to_expr(0x20000018+index+1)})
