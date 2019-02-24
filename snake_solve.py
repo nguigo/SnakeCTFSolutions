@@ -54,6 +54,7 @@ def main():
   parser = Sandbox_Win64.parser(description="PE sandboxer")
   parser.add_argument("filename", help="PE Filename")
   options = parser.parse_args()
+  options.jitter = 'llvm'
   options.use_seh = True # So we dont need to reimplement qt crap
   options.dependencies = True # So we dont need to reimplement qt crap
   sb = Sandbox_Win64(options.filename, options, custom_methods=qt_methods)
