@@ -1,10 +1,10 @@
 import os
-from miasm2.analysis.sandbox     import Sandbox, Sandbox_Win_x86_64, OS_Win, Arch_x86_64
+from miasm.analysis.sandbox     import Sandbox, Sandbox_Win_x86_64, OS_Win, Arch_x86_64
 
 class OS_Win64(OS_Win):
 
     def __init__(self, custom_methods, *args, **kwargs):
-        from miasm2.jitter.loader.pe import vm_load_pe, vm_load_pe_libs,\
+        from miasm.jitter.loader.pe import vm_load_pe, vm_load_pe_libs,\
             preload_pe, libimp_pe, vm_load_pe_and_dependencies
         import win_api_x86_64, win_api_x86_64_seh
         methods = win_api_x86_64.__dict__
@@ -23,6 +23,7 @@ class OS_Win64(OS_Win):
         # Load main pe
         with open(self.fname, "rb") as fstream:
             self.pe = vm_load_pe(self.jitter.vm, fstream.read(),
+                                 align_s=self.options.align_s,
                                  load_hdr=self.options.load_hdr,
                                  name=self.fname,
                                  **kwargs)
@@ -76,7 +77,7 @@ class Sandbox_Win64(Sandbox, Arch_x86_64, OS_Win64):
         Sandbox.__init__(self, *args, **kwargs)
 
         # reserve stack for local reg
-        for _ in xrange(0x8):
+        for _ in range(0x8):
             self.jitter.push_uint64_t(0)
 
         # Pre-stack return address

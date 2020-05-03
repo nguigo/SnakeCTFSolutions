@@ -1,4 +1,4 @@
-from miasm2.core.types import MemStruct, Num, Ptr, Str, \
+from miasm.core.types import MemStruct, Num, Ptr, Str, \
     Array, RawStruct, Union, \
     BitField, Self, Void, Bits, \
     set_allocator, MemUnion, Struct

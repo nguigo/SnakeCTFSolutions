@@ -21,11 +21,11 @@ import logging
 import os
 import struct
 
-from elfesteem import pe_init
+from miasm.loader import pe_init
 
-from miasm2.jitter.csts import PAGE_READ, PAGE_WRITE
-from miasm2.core.utils import pck32, upck32
-import miasm2.arch.x86.regs as x86_regs
+from miasm.jitter.csts import PAGE_READ, PAGE_WRITE
+from miasm.core.utils import pck32, upck32
+import miasm.arch.x86.regs as x86_regs
 
 from win_64_structs import LdrDataEntry, ListEntry, \
     TEB, NT_TIB, PEB, PEB_LDR_DATA, ContextException
@@ -92,7 +92,7 @@ def build_teb(jitter, teb_address):
 
     # Only allocate space for ExceptionList/ProcessEnvironmentBlock/Self
     jitter.vm.add_memory_page(teb_address, PAGE_READ | PAGE_WRITE,
-                              "\x00" * TEB.sizeof(), "TEB")
+                              b"\x00" * TEB.sizeof(), "TEB")
     #jitter.vm.add_memory_page(teb_address, PAGE_READ | PAGE_WRITE,
     #                          "\x00" * NT_TIB.get_offset("StackBase"),
     #                          "TEB.NtTib.ExceptionList")
@@ -120,20 +120,16 @@ def build_peb(jitter, peb_address):
     """
 
     if main_pe:
-        offset, length = peb_address + 8, 28
-    else:
-        offset, length = peb_address + 0xC, 0
-    length += 4
+        offset, length = peb_address, 28
 
     jitter.vm.add_memory_page(offset, PAGE_READ | PAGE_WRITE,
-                              "\x00" * length,
+                              b"\x00" * length,
                               "PEB")
 
     Peb = PEB(jitter.vm, peb_address)
     if main_pe:
         Peb.ImageBaseAddress = main_pe.NThdr.ImageBase
     Peb.Ldr = peb_ldr_data_address
-
 
 def build_ldr_data(jitter, modules_info):
     """
@@ -161,7 +157,7 @@ def build_ldr_data(jitter, modules_info):
         ntdll_addr_entry = modules_info.module2entry[ntdll_pe]
 
     jitter.vm.add_memory_page(addr + offset, PAGE_READ | PAGE_WRITE,
-                              "\x00" * size,
+                              b'\x00'*size,
                               "Loader struct")  # (ldrdata.get_size() - offset))
 
     if main_pe:
@@ -238,7 +234,7 @@ def create_modules_chain(jitter, name2module):
 
         # Allocate a partial LdrDataEntry (0-Flags)
         jitter.vm.add_memory_page(addr, PAGE_READ | PAGE_WRITE,
-                                  "\x00" * LdrDataEntry.get_offset("Flags"),
+                                  b"\x00" * LdrDataEntry.get_offset("Flags"),
                                   "Module info %r" % bname_str)
 
         LdrEntry = LdrDataEntry(jitter.vm, addr)
@@ -254,11 +250,11 @@ def create_modules_chain(jitter, name2module):
         LdrEntry.BaseDllName.data = addr + offset_name
 
         jitter.vm.add_memory_page(addr + offset_name, PAGE_READ | PAGE_WRITE,
-                                  bname + "\x00" * 3,
+                                  (bname+'\x00'*3).encode('ascii'),
                                   "Module name %r" % bname_str)
 
         jitter.vm.add_memory_page(addr + offset_path, PAGE_READ | PAGE_WRITE,
-                                  "\x00".join(bpath) + "\x00" + "\x00" * 3,
+                                  ('\x00'.join(bpath) + '\x00' + '\x00'*3).encode('ascii'),
                                   "Module path %r" % bname_str)
 
     return modules_info
@@ -370,9 +366,9 @@ def add_process_env(jitter):
     env_str += "\x00" * 0x10
     jitter.vm.add_memory_page(process_environment_address,
                               PAGE_READ | PAGE_WRITE,
-                              env_str,
-                              "Process environment")
-    jitter.vm.set_mem(process_environment_address, env_str)
+                              env_str.encode('ascii'),
+                              'Process environment')
+    #jitter.vm.set_mem(process_environment_address, env_str)
 
 
 def add_process_parameters(jitter):
@@ -381,9 +377,9 @@ def add_process_parameters(jitter):
     @jitter: jitter instance
     """
 
-    o = ""
+    o = b""
     o += pck32(0x1000)  # size
-    o += "E" * (0x48 - len(o))
+    o += b"E" * (0x48 - len(o))
     o += pck32(process_environment_address)
     jitter.vm.add_memory_page(process_parameters_address,
                               PAGE_READ | PAGE_WRITE,

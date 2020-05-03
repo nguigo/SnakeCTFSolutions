@@ -5,21 +5,21 @@ import time
 import string
 import logging
 from zlib import crc32
-from StringIO import StringIO
+from io import StringIO
 import time
 import datetime
 
 try:
     from Crypto.Hash import MD5, SHA
 except ImportError:
-    print "cannot find crypto, skipping"
+    print("cannot find crypto, skipping")
 
-from miasm2.jitter.csts import PAGE_READ, PAGE_WRITE, PAGE_EXEC
-from miasm2.core.utils import pck16, pck32, upck16, upck32, hexdump, whoami
-from miasm2.os_dep.common import heap, windows_to_sbpath
-from miasm2.os_dep.common import set_str_unic, set_str_ansi
-from miasm2.os_dep.common import get_fmt_args as _get_fmt_args
-from miasm2.os_dep.win_api_x86_32_seh import tib_address
+from miasm.jitter.csts import PAGE_READ, PAGE_WRITE, PAGE_EXEC
+from miasm.core.utils import pck16, pck32, upck16, upck32, hexdump, whoami
+from miasm.os_dep.common import heap, windows_to_sbpath
+from miasm.os_dep.common import set_win_str_w, set_win_str_a
+from miasm.os_dep.common import get_fmt_args as _get_fmt_args
+from miasm.os_dep.win_api_x86_32_seh import tib_address
 
 log = logging.getLogger("win_api_x86_64")
 console_handler = logging.StreamHandler()
@@ -60,7 +60,7 @@ ACCESS_DICT = {0x0: 0,
                0x100: 0
                }
 
-ACCESS_DICT_INV = dict((x[1], x[0]) for x in ACCESS_DICT.iteritems())
+ACCESS_DICT_INV = dict((x[1], x[0]) for x in ACCESS_DICT.items())
 
 
 class whandle():
@@ -365,9 +365,9 @@ def kernel32_GetVersionEx(jitter, str_size, set_str):
 
 
 kernel32_GetVersionExA = lambda jitter: kernel32_GetVersionEx(jitter, 128,
-                                                              set_str_ansi)
+                                                              set_win_str_a)
 kernel32_GetVersionExW = lambda jitter: kernel32_GetVersionEx(jitter, 256,
-                                                              set_str_unic)
+                                                              set_win_str_w)
 
 
 def kernel32_GetPriorityClass(jitter):
@@ -1277,7 +1277,7 @@ def mdl2ad(n):
 
 
 def ad2mdl(ad):
-    return ((ad - winobjs.nt_mdl_ad) & 0xFFFFFFFFL) / 0x10
+    return ((ad - winobjs.nt_mdl_ad) & 0xFFFFFFFF) / 0x10
 
 
 def ntoskrnl_IoAllocateMdl(jitter):
@@ -2889,7 +2889,7 @@ def raw2guid(r):
     return '{%.8X-%.4X-%.4X-%.4X-%.2X%.2X%.2X%.2X%.2X%.2X}' % o
 
 
-digs = string.digits + string.lowercase
+digs = string.digits + string.ascii_lowercase
 
 
 def int2base(x, base):
